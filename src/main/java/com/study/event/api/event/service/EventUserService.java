@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.mail.internet.MimeMessage;
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 @Service
 @Slf4j
@@ -107,6 +108,29 @@ public class EventUserService {
     // 검증 코드 생성 로직 1000~9999 사이의 4자리 랜덤숫자
     private String generateVerificationCode() {
         return String.valueOf((int) (Math.random() * 9000 + 1000));
+    }
+
+    public boolean isMatchCode(String email, String code) {
+
+        // 이메일을 통해 회원정보를 탐색
+        EventUser eventUser = eventUserRepository.findByEmail(email).orElse(null);
+
+        if (eventUser != null) {
+        // 인증 코드가 있는지 탐색
+            EmailVerification ev = emailVerificationRepository
+                                    .findByEventUser(eventUser).orElse(null);
+
+        // 인증 코드가 있고 만료시간이 지나지 않았고 코드번호가 일치할 경우
+            if (
+                    ev != null
+                            && ev.getExpiryDate().isAfter(LocalDateTime.now())
+                            && code.equals(ev.getVerificationCode())
+            ) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
 }
