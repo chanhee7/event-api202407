@@ -9,8 +9,8 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController // React 를 사용하면 무조건 @RestController 사용하기
 @RequestMapping("/auth")
-@Slf4j
 @RequiredArgsConstructor
+@Slf4j
 public class EventUserController {
 
     private final EventUserService eventUserService;
