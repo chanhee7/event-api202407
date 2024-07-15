@@ -197,7 +197,7 @@ public class EventUserService {
         String password = dto.getPassword();
         String encodedPassword = encoder.encode(password); // 암호화
 
-        foundUser.confirm(dto.getPassword());
+        foundUser.confirm(encodedPassword);
         eventUserRepository.save(foundUser);
     }
 

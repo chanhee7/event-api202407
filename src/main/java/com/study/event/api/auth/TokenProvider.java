@@ -54,7 +54,7 @@ public class TokenProvider {
         return Jwts.builder()
                 // token 에 들어갈 서명
                 .signWith(
-                        Keys.hmacShaKeyFor("서명에 사용할 키".getBytes()),
+                        Keys.hmacShaKeyFor(SECRET_KEY.getBytes()),
                         SignatureAlgorithm.HS512
                 )
                 // payload 에 들어갈 클레임 설정
