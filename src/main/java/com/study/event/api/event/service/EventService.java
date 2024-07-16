@@ -1,5 +1,6 @@
 package com.study.event.api.event.service;
 
+
 import com.study.event.api.event.dto.request.EventSaveDto;
 import com.study.event.api.event.dto.response.EventDetailDto;
 import com.study.event.api.event.dto.response.EventOneDto;
@@ -23,7 +24,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-@Transactional // JPA service 에는 꼭 붙여야 함
+@Transactional // 반드시 붙여야 함
 public class EventService {
 
     private final EventRepository eventRepository;
@@ -32,24 +33,19 @@ public class EventService {
     // 전체 조회 서비스
     public Map<String, Object> getEvents(int pageNo, String sort, String userId) {
 
-        Pageable pageable = PageRequest.of(pageNo - 1,4);
+        Pageable pageable = PageRequest.of(pageNo - 1, 4);
 
-//        Page<Event> eventsPage = eventRepository.findEvents(pageable, sort, userId);
+        Page<Event> eventsPage = eventRepository.findEvents(pageable, sort, userId);
 
-        EventUser eventUser = eventUserRepository.findById(userId).orElseThrow();
-
-        List<Event> events = eventUser.getEventList();
-
-        //이벤트 목록
-//        List<Event> events = eventsPage.getContent();
+        // 이벤트 목록
+        List<Event> events = eventsPage.getContent();
 
         List<EventDetailDto> eventDtoList = events
                 .stream().map(EventDetailDto::new)
                 .collect(Collectors.toList());
 
         // 총 이벤트 개수
-//        long totalElements = eventsPage.getTotalElements();
-        long totalElements = 100;
+        long totalElements = eventsPage.getTotalElements();
 
         Map<String, Object> map = new HashMap<>();
         map.put("events", eventDtoList);
@@ -73,7 +69,9 @@ public class EventService {
 
     // 이벤트 단일 조회
     public EventOneDto getEventDetail(Long id) {
+
         Event foundEvent = eventRepository.findById(id).orElseThrow();
+
         return new EventOneDto(foundEvent);
     }
 
