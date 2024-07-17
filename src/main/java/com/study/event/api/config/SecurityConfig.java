@@ -19,9 +19,9 @@ import org.springframework.web.filter.CorsFilter;
 // 권한처리
 // OAuth2 - SNS 로그인
 @EnableWebSecurity
-// 컨트롤러에서 사전, 사후에 권한정보를 캐치해서 막을건지
-@EnableGlobalMethodSecurity(prePostEnabled = true)
 @RequiredArgsConstructor
+// ↓ 컨트롤러에서 사전, 사후에 권한정보를 캐치해서 막을건지. true 는 open
+@EnableGlobalMethodSecurity(prePostEnabled = true)
 public class SecurityConfig {
 
     private final JwtAuthFilter jwtAuthFilter;
@@ -39,28 +39,31 @@ public class SecurityConfig {
         http
                 .cors()
                 .and()
-                .csrf().disable() // 필터 설정 off
+                .csrf().disable() // 필터설정 off
                 .httpBasic().disable() // 베이직 인증 off
                 .formLogin().disable() // 로그인창 off
-                // 세션 인증은 더 이상 사용하지 않음
+                // 세선 인증은 더 이상 사용하지 않음
                 .sessionManagement()
-                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                .sessionCreationPolicy(SessionCreationPolicy.STATELESS) // 상태관리를 세션으로 안한다
                 .and()
+                // 여기까지는 시큐리티에서 기본제공하는 기능 다 off
                 .authorizeRequests() // 요청 별로 인가 설정
 
-                //  /events/* -> 뒤에 딱 하나만,  /events/** -> 뒤에 여러개
-                .antMatchers(HttpMethod.DELETE, "/events/*").hasAuthority("ADMIN")
+                // /events/*     -> 뒤에 딱 하나만
+                // /events/**    -> 뒤에 여러개
+                .antMatchers(HttpMethod.DELETE,"/events/*").hasAuthority("ADMIN")
 
-                // 아래의 URL 요청은 로그인 없이도 모두 허용
-//                .antMatchers("/**").permitAll() // 인가 설정 off
-                .antMatchers("/", "/auth/**").permitAll()// 인가 설정 on
+                .antMatchers(HttpMethod.PUT, "/auth/promote").hasAuthority("COMMON")
 
-                // 나머지 요청은 전부 인증(로그인) 후 진행해야함
+                // 아래의 URL 요청은 로그인 없이 모두 허용
+                .antMatchers("/", "/auth/**").permitAll()
+
+                // 나머지 요청은 전부 인증(로그인) 후 진행해라
                 .anyRequest().authenticated() // 인가 설정 on
         ;
 
         // 토큰 위조 검사 커스텀 필터 필터체인에 연결
-        // CorsFilter(spring 의 필터 사용) 뒤에 커스텀 필터를 연결
+        // CorsFilter(spring 의 필터) 뒤에 커스텀 필터를 연결
         http.addFilterAfter(jwtAuthFilter, CorsFilter.class);
 
         return http.build();
