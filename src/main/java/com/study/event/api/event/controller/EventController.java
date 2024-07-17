@@ -1,5 +1,6 @@
 package com.study.event.api.event.controller;
 
+import com.study.event.api.auth.TokenProvider;
 import com.study.event.api.event.dto.request.EventSaveDto;
 import com.study.event.api.event.dto.response.EventOneDto;
 import com.study.event.api.event.service.EventService;
@@ -10,6 +11,8 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
+
+import static com.study.event.api.auth.TokenProvider.*;
 
 @RestController
 @RequestMapping("/events")
@@ -22,21 +25,22 @@ public class EventController {
     // 전체 조회 요청
     @GetMapping("/page/{pageNo}")
     public ResponseEntity<?> getList(
-            @AuthenticationPrincipal String userId, // 토큰파싱 결과로 로그인에 성공한 회원의 PK
+            // 토큰파싱 결과로 로그인에 성공한 회원의 PK
+            @AuthenticationPrincipal TokenUserInfo tokenInfo,
             @RequestParam(required = false) String sort,
             @PathVariable int pageNo
     ) throws InterruptedException {
 
-        log.info("token user id : {}", userId);
+        log.info("token info : {}", tokenInfo);
 
         if (sort == null) {
             return ResponseEntity.badRequest().body("sort 파라미터가 없습니다.");
         }
 
-        Map<String, Object> events = eventService.getEvents(pageNo, sort, userId);
+        Map<String, Object> events = eventService.getEvents(pageNo, sort, tokenInfo.getUserId());
 
         // 의도적으로 2초간의 로딩을 설정
-        Thread.sleep(2000);
+//        Thread.sleep(2000);
 
         return ResponseEntity.ok().body(events);
     }
@@ -44,16 +48,19 @@ public class EventController {
     // 등록 요청
     @PostMapping
     public ResponseEntity<?> register(
-            @AuthenticationPrincipal String userId, // JwtAuthFilter 에서 시큐리티에 등록한 데이터
-            @RequestBody EventSaveDto dto) {
+            // JwtAuthFilter 에서 시큐리티에 등록한 데이터
+            @AuthenticationPrincipal TokenUserInfo userInfo,
+            @RequestBody EventSaveDto dto
+    ) {
 
-        eventService.saveEvent(dto, userId);
-        return ResponseEntity.ok().body("event saved");
+        eventService.saveEvent(dto, userInfo.getUserId());
+        return ResponseEntity.ok().body("event saved!");
     }
 
     // 단일 조회 요청
     @GetMapping("/{eventId}")
     public ResponseEntity<?> getEvent(@PathVariable Long eventId) {
+
         if (eventId == null || eventId < 1) {
             String errorMessage = "eventId가 정확하지 않습니다.";
             log.warn(errorMessage);
@@ -61,22 +68,28 @@ public class EventController {
         }
 
         EventOneDto eventDetail = eventService.getEventDetail(eventId);
+
         return ResponseEntity.ok().body(eventDetail);
     }
 
     // 삭제 요청
     @DeleteMapping("/{eventId}")
     public ResponseEntity<?> delete(@PathVariable Long eventId) {
+
         eventService.deleteEvent(eventId);
-        return ResponseEntity.ok().body("event deleted");
+
+        return ResponseEntity.ok().body("event deleted!");
     }
 
     // 수정 요청
     @PatchMapping("/{eventId}")
-    public ResponseEntity<?> modify(@RequestBody EventSaveDto dto,
-                                    @PathVariable Long eventId) {
+    public ResponseEntity<?> modify(
+            @RequestBody EventSaveDto dto,
+            @PathVariable Long eventId
+    ) {
         eventService.modifyEvent(dto, eventId);
-        return ResponseEntity.ok().body("event modified");
+
+        return ResponseEntity.ok().body("event modified!!");
     }
 
 }

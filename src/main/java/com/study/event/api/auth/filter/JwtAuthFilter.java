@@ -18,6 +18,8 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.ArrayList;
 
+import static com.study.event.api.auth.TokenProvider.*;
+
 // 클라이언트가 요청에 포함한 토큰정보를 검사하는 필터
 @Component
 @Slf4j
@@ -27,19 +29,20 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     private final TokenProvider tokenProvider;
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request,
-                                    HttpServletResponse response,
-                                    FilterChain filterChain) throws ServletException, IOException {
+    protected void doFilterInternal(
+            HttpServletRequest request,
+            HttpServletResponse response,
+            FilterChain filterChain) throws ServletException, IOException {
 
         try {
             // 요청 메세지에서 토큰을 파싱
             // 토큰정보는 요청헤더에 포함되어 전송됨
             String token = parseBearerToken(request);
 
+            log.info("토큰 위조 검사 필터 작동!");
             if (token != null) {
-                log.info("토큰 위조 검사 필터 작동");
                 // 토큰 위조 검사
-                String userId = tokenProvider.validateAndGetTokenInfo(token);
+                TokenUserInfo tokenInfo = tokenProvider.validateAndGetTokenInfo(token);
 
                 // 인증 완료 처리
                 /*
@@ -48,9 +51,9 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                  */
                 AbstractAuthenticationToken auth
                         = new UsernamePasswordAuthenticationToken(
-                                userId, // 인증 완료 후 컨트롤러에서 사용할 정보
-                                null, // 인증된 사용자의 패스워드 - 보통 null 로 둠
-                                new ArrayList<>() // 인가정보(권한) 리스트
+                        tokenInfo, // 인증 완료 후 컨트롤러에서 사용할 정보
+                        null, // 인증된 사용자의 패스워드 - 보통 null 로 둠
+                        new ArrayList<>()  // 인가정보(권한) 리스트
                 );
 
                 // 인증 완료시 클라이언트의 요청 정보들을 세팅
@@ -60,6 +63,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
                 // 스프링 시큐리티에게 인증이 끝났다는 사실을 전달
                 SecurityContextHolder.getContext().setAuthentication(auth);
+
             }
 
         } catch (Exception e) {
@@ -67,22 +71,23 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             e.printStackTrace();
         }
 
+
         // 필터체인에 내가 만든 커스텀필터를 실행하도록 명령
-        // 필터체인: 필터는 여러개이고, 우리가 체인에 걸어 놓은 필터를
+        // 필터체인: 필터는 여러개임 우리가 체인에 걸어 놓은 필터를
         // 실행명령
         filterChain.doFilter(request, response);
     }
 
     private String parseBearerToken(HttpServletRequest request) {
         /*
-            1. 요청 헤더에서 토큰을 가져오기
+             1. 요청 헤더에서 토큰을 가져오기
 
-            -- request header
+             -- request header
 
-            {
-                'Authorization' : 'Bearer ~~~~~~~~~~~~~~~~~~~',
-                'Content-type' : 'application/json',
-            }
+             {
+                'Authorization' : 'Bearer ~~~~~~~~~~~~~~~~~~~~~~',
+                'Content-type' : 'application/json'
+             }
          */
 
         String bearerToken = request.getHeader("Authorization");
@@ -93,5 +98,4 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         }
         return null;
     }
-
 }
